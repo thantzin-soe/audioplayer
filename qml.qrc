@@ -2,5 +2,8 @@
     <qresource prefix="/">
         <file>main.qml</file>
         <file>fontawesome.ttf</file>
+        <file>CalendarDialog.qml</file>
+        <file>TimePicker.qml</file>
+        <file>data.json</file>
     </qresource>
 </RCC>
