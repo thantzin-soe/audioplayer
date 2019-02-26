@@ -51,6 +51,7 @@ Item {
                     start_hour = hour.value
                     start_hourchanged()
                 }
+
             }
             SpinBox {
                 id: minute
@@ -73,5 +74,9 @@ Item {
         }
     }
 
-
+    function resetPickers(){
+        hour.value = 1;
+        minute.value = 0;
+        ampm.currentIndex = 0;
+    }
 }

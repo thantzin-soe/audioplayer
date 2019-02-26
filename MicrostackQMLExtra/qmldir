@@ -1,0 +1,3 @@
+module MicrostackQMLExtra
+plugin MicrostackQMLExtraLib
+typeinfo plugins.qmltypes

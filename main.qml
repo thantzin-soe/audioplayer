@@ -5,6 +5,7 @@ import QtQuick.Controls 2.5
 import Qt.labs.settings 1.1
 import QtQuick.Dialogs 1.3
 import MicrostackQMLExtra  1.0
+import QtMultimedia 5.8
 
 Window {
     id : app
@@ -20,38 +21,44 @@ Window {
     property string chosen_file_path: ""
     property var dates : [0,0,0,0,0,0,0]
     property int start_h : 0
-    property int start_m: 0
+    property string start_m: "0"
     property string am_pm : "AM"
 
     FontLoader { id: myFont; source: "qrc:///fontawesome.ttf" }
+
+    Audio {
+           id: player
+           autoPlay: true
+           source : ""
+       }
 
     JsonFileIO {
         id : jsonFileIo
         filename : "F:/data.json"
         Component.onCompleted: {
             audio_file_list = jsonFileIo.load();
-            for(var i in audio_file_list){
-                for(var key in audio_file_list[i]){
-                    if(key === "date"){
-                        let arr = audio_file_list[i][key];
-                        delete audio_file_list[i][key];
-                        audio_file_list[i]["date"] = arr;
-                    }
-
-                }
-                myModel.append(audio_file_list[i]);
+            for(var idx in audio_file_list){
+                var obj = audio_file_list[idx];
+                var filename = obj['file_path'];
+                filename = filename.substring(filename.lastIndexOf('/') + 1,filename.length);
+                var date = obj['date'];
+                var time = obj['time'];
+                myModel.append({'file_path' : filename , 'date' : JSON.stringify(date) , 'time' : time});
             }
-
-            console.log("Start " + audio_file_list.length);
 
         }
         onSaveFinished : {
+            console.log("Cleared");
             myModel.clear()
             audio_file_list = jsonFileIo.load();
-            for(var i in audio_file_list){
-                myModel.append(audio_file_list);
+            for(var idx in audio_file_list){
+                var obj = audio_file_list[idx];
+                var filename = obj['file_path'];
+                filename = filename.substring(filename.lastIndexOf('/') + 1,filename.length);
+                var date = obj['date'];
+                var time = obj['time'];
+                myModel.append({'file_path' : filename , 'date' : JSON.stringify(date) , 'time' : time});
             }
-            console.log("Inserted " + audio_file_list.length);
         }
     }
 
@@ -104,6 +111,8 @@ Window {
                     }
 
                     onClicked: {
+                        time_picker.resetPickers();
+                        addDialog.editMode = false;
                         addDialog.open()
                     }
 
@@ -113,6 +122,7 @@ Window {
 
                 ListView{
                     id : mainview
+                    spacing: 5
                     Layout.preferredHeight: container.height - 70
                     Layout.preferredWidth: container.width / 1.1
                     Layout.alignment: Qt.AlignCenter
@@ -120,13 +130,15 @@ Window {
                     flickableDirection: Flickable.VerticalFlick
                     boundsBehavior: Flickable.StopAtBounds
                     model : myModel
+                    currentIndex: -1
 
                     delegate: Rectangle{
                         id : content
+                        property bool isCurrentItem: mainview.currentIndex === index ? true : false
                         width: mainview.width
-                        height: 50
+                        height: 45
                         anchors.margins: 5
-                        color: "lightgrey"
+                        color: isCurrentItem ? "black" : "grey"
 
                         Row{
                             anchors.fill: content
@@ -135,19 +147,49 @@ Window {
                             anchors.rightMargin: 10
                             spacing: 5
                             Text{
+                                id : file_path_row
                                 anchors.verticalCenter: parent.verticalCenter
                                 font.family: "Zawgyi-One"
-                                width : (mainview.width - 100) / 2
+                                width : (mainview.width - 100) / 3
                                 text: file_path;
                                 clip: true
                                 wrapMode: Text.WordWrap
-
+                                font.weight: Font.DemiBold
+                                font.bold: content.isCurrentItem
+                                color: content.isCurrentItem ? "#33D095" : "white"
                             }
-                            Text{
+                            Row{
+                                id : day_row
                                 anchors.verticalCenter: parent.verticalCenter
-                                horizontalAlignment: Text.AlignLeft
-                                width : (mainview.width - 100) / 2
-                                text: date + ", " + time
+                                spacing: 4
+
+                                property var daylist: JSON.parse(date)
+                                Repeater{
+                                    model: ["SUN","MON","TUE","WED","THU","FRI","SAT"];
+                                    Rectangle{
+                                        width: 35
+                                        height: 35
+                                        radius: 5
+                                        color : "#33D095"
+                                        Text {
+                                            anchors.fill: parent
+                                            horizontalAlignment: Text.AlignHCenter
+                                            verticalAlignment: Text.AlignVCenter
+                                            text: modelData
+                                            color : "white"
+                                        }
+                                        opacity: day_row.daylist[index] === 1 ? 1 : 0.3
+                                    }
+                                }
+                            }
+
+                            Text{ 
+                                anchors.verticalCenter: parent.verticalCenter
+                                horizontalAlignment: Text.AlignHCenter
+                                width : (mainview.width - 100) / 3
+                                text: time
+                                font.bold: content.isCurrentItem
+                                color: content.isCurrentItem ? "#33D095" : "white"
 
                             }
 
@@ -173,6 +215,38 @@ Window {
                                     horizontalAlignment: Text.AlignHCenter
                                     verticalAlignment: Text.AlignVCenter
                                     elide: Text.ElideRight
+                                }
+
+                                onClicked: {
+
+                                    chosen_file_path = file_path;
+                                    filepath.text = chosen_file_path;
+                                    console.log(chosen_file_path, " ", date);
+                                    let date_list = JSON.parse(date);
+                                    for(var index in date_list){
+                                        if(index === "0" && date_list[index] === 1){
+                                            sunday.checked =  true;
+                                        }else if(index === "1" && date_list[index] === 1){
+                                            monday.checked = true;
+                                        }else if(index === "2" && date_list[index] === 1){
+                                            tuesday.checked = true;
+                                        }else if(index === "3" && date_list[index] === 1){
+                                            wednesday.checked = true;
+                                        }else if(index === "4" && date_list[index] === 1){
+                                            thursday.checked = true;
+                                        }else if(index === "5" && date_list[index] === 1){
+                                            friday.checked = true;
+                                        }else if(index === "6" && date_list[index] === 1){
+                                            saturday.checked = true;
+                                        }
+                                    }
+                                    if(sunday.checked && monday.checked && tuesday.checked && wednesday.checked && thursday.checked && friday.checked &&                                  saturday.checked){
+                                        daily.checked = true;
+                                    }
+
+                                    console.log(date);
+                                    addDialog.editMode = true;
+                                    addDialog.open();
                                 }
 
                             }
@@ -201,13 +275,9 @@ Window {
                                 }
                                 onClicked: {
                                      app.audio_file_list.splice(index,1);
-                                     myModel.clear()
-                                    for(var i = 0 ; i < app.audio_file_list.length ; i++){
-                                        myModel.append(app.audio_file_list[i]);
-                                    }
-                                     let after_delete = JSON.stringify(app.audio_file_list);
-                                     appSetting.audio_list = after_delete;
-
+                                     jsonFileIo.save(app.audio_file_list);
+                                     player.stop()
+                                     player.source = "";
                                 }
                             }
                         }
@@ -239,7 +309,7 @@ Window {
    Dialog{
         id : addDialog
         title: "Add New MP3"
-
+        property bool editMode: false
         contentItem: Rectangle {
             id : mainContent
             color: "lightgrey"
@@ -286,7 +356,7 @@ Window {
                         }
 
                         Text{
-                            id : file_path
+                            id : filepath
                             anchors.verticalCenter: parent.verticalCenter
                             font.family: "Zawgyi-One"
                             font.pixelSize: 14
@@ -295,8 +365,6 @@ Window {
                         }
 
                     }
-
-
 
             }
 
@@ -314,14 +382,26 @@ Window {
                         spacing: 5
                         anchors.centerIn: parent
                         CheckBox{
+                            id : sunday
+                            checked : daily.checkState === Qt.Checked ? true : false
+                            text: "SUN"
+                            onCheckedChanged: {
+                                if(sunday.checked){
+                                    dates[0] = 1
+                                }else{
+                                    dates[0] = 0
+                                }
+                            }
+                        }
+                        CheckBox{
                             id : monday
                             checked : daily.checkState === Qt.Checked ? true : false
                             text: "MON"
                             onCheckedChanged: {
                                 if(monday.checked){
-                                    dates[0] = true
+                                    dates[1] = 1
                                 }else{
-                                    dates[0] = false
+                                    dates[1] = 0
                                 }
                             }
                         }
@@ -331,9 +411,9 @@ Window {
                             text: "TUE"
                             onCheckedChanged: {
                                 if(tuesday.checked){
-                                    dates[1] = true
+                                    dates[2] = 1
                                 }else{
-                                    dates[1] = false
+                                    dates[2] = 0
                                 }
                             }
                         }
@@ -343,9 +423,9 @@ Window {
                             text: "WED"
                             onCheckedChanged: {
                                 if(wednesday.checked){
-                                    dates[2] = true
+                                    dates[3] = 1
                                 }else{
-                                    dates[2] = false
+                                    dates[3] = 0
                                 }
                             }
                         }
@@ -355,9 +435,9 @@ Window {
                             text: "THU"
                             onCheckedChanged: {
                                 if(thursday.checked){
-                                    dates[3] = true
+                                    dates[4] = 1
                                 }else{
-                                    dates[3] = false
+                                    dates[4] = 0
                                 }
                             }
                         }
@@ -367,9 +447,9 @@ Window {
                             text: "FRI"
                             onCheckedChanged: {
                                 if(friday.checked){
-                                    dates[4] = true
+                                    dates[5] = 1
                                 }else{
-                                    dates[4] = false
+                                    dates[5] = 0
                                 }
                             }
                         }
@@ -379,24 +459,13 @@ Window {
                             text: "SAT"
                             onCheckedChanged: {
                                 if(saturday.checked){
-                                    dates[5] = true
+                                    dates[6] = 1
                                 }else{
-                                    dates[5] = false
+                                    dates[6] = 0
                                 }
                             }
                         }
-                        CheckBox{
-                            id : sunday
-                            checked : daily.checkState === Qt.Checked ? true : false
-                            text: "SUN"
-                            onCheckedChanged: {
-                                if(sunday.checked){
-                                    dates[6] = true
-                                }else{
-                                    dates[6] = false
-                                }
-                            }
-                        }
+
                         CheckBox{
                             id : daily
                             text: "DAILY"
@@ -411,14 +480,26 @@ Window {
                             onCheckedChanged: {
                                 if(daily.checked){
                                     for(var i in dates){
-                                        dates[i] = true
+                                        dates[i] = 1
                                     }
-
+                                    monday.checked = true;
+                                    tuesday.checked = true;
+                                    wednesday.checked = true;
+                                    thursday.checked = true;
+                                    friday.checked = true;
+                                    saturday.checked = true;
+                                    sunday.checked = true;
                                 }else{
                                     for(var j in dates){
-                                        dates[j] = false
+                                        dates[j] = 0
                                     }
-
+                                    monday.checked = false;
+                                    tuesday.checked = false;
+                                    wednesday.checked = false;
+                                    thursday.checked = false;
+                                    friday.checked = false;
+                                    saturday.checked = false;
+                                    sunday.checked = false;
                                 }
 
                             }
@@ -442,6 +523,7 @@ Window {
                         onStart_am_pmChanged: {
                             am_pm = time_picker.start_am_pm
                         }
+
                     }
                     Button{
                         id : save
@@ -454,6 +536,13 @@ Window {
                         anchors.bottomMargin: 20
 
                         text: "Save"
+                        enabled: {
+                            if(chosen_file_path.length > 0){
+                                 return true;
+                            }
+                            return false;
+                        }
+
                         background: Rectangle{
                             color: save.down ? "#009490" : "teal"
                             border.width: save.down ? 1 : 0
@@ -470,36 +559,94 @@ Window {
                             elide: Text.ElideRight
                         }
                         onClicked: {
-                            chosen_file_path = JSON.stringify(fileChooser.fileUrl)
-                            chosen_file_path = chosen_file_path.replace(/\\|\"/g,"");
 
-                            let time = start_h + ":" + start_m + " " + am_pm
-                            console.log("Saving ");
-                            console.log("File path " + chosen_file_path);
-                            console.log("Time " + time);
-                            for(var i in dates){
-                                console.log(dates[i]);
+                            if(addDialog.editMode){
+                                chosen_file_path = JSON.stringify(fileChooser.fileUrl)
+                                chosen_file_path = chosen_file_path.replace(/\\|\"/g,"");
+                                if(parseInt(start_m) < 10){
+                                    start_m =  "0" + start_m.toString();
+                                }
+                                start_h = start_h < 1 ? 1 : start_h;
+                                let edit_time = start_h + ":" + start_m + " " + am_pm
+                                console.log("Edit Saving ");
+                                console.log("Edit File path " + chosen_file_path);
+                                console.log("Edit Time " + edit_time);
+                                for(var ii in dates){
+                                    console.log(dates[ii]);
+                                }
+
+                            }else{
+
+                                chosen_file_path = chosen_file_path.replace(/\\|\"/g,"");
+                                if(parseInt(start_m) < 10){
+                                    start_m =  "0" + start_m.toString();
+                                }
+
+                                start_h = start_h < 1 ? 1 : start_h;
+                                let time = start_h + ":" + start_m + " " + am_pm
+                                console.log("Saving ");
+                                console.log("File path " + chosen_file_path);
+                                console.log("Time " + time);
+                                for(var i in dates){
+                                    console.log(dates[i]);
+                                }
+
+                                var newObj = {
+                                    file_path : app.chosen_file_path,
+                                    date : app.dates,
+                                    time : time
+                                };
+
+                                app.audio_file_list.push(newObj);
+                                jsonFileIo.save(app.audio_file_list);
                             }
 
-                            var newObj = {
-                                file_path : app.chosen_file_path,
-                                date : app.dates,
-                                time : time
-                            };
 
-                            app.audio_file_list.push(newObj);
-                            jsonFileIo.save(app.audio_file_list);
 
                             chosen_file_path = "";
                             for(var j in dates){
                                 dates[j] = 0
                             }
-
+                            start_h = 0;
+                            start_m = "0";
+                            am_pm = "AM";
+                            fileChooser.clearSelection();
+                            chosen_file_path = "";
+                            file_path.text = "";
+                            monday.checked = false;
+                            tuesday.checked = false
+                            wednesday.checked = false;
+                            thursday.checked = false;
+                            friday.checked  = false;
+                            saturday.checked = false;
+                            sunday.checked = false;
+                            daily.checked = false;
+                            time_picker.resetPickers();
+                            addDialog.editMode = false;
                             addDialog.close();
                         }
                     }
         }
-    }
+
+        onVisibleChanged: {
+            if(addDialog.visible){
+
+            }else{
+                monday.checked = false;
+                tuesday.checked = false
+                wednesday.checked = false;
+                thursday.checked = false;
+                friday.checked  = false;
+                saturday.checked = false;
+                sunday.checked = false;
+                daily.checked = false;
+                time_picker.resetPickers();
+            }
+        }
+
+
+
+}
 
    FileDialog{
         id : fileChooser
@@ -509,106 +656,32 @@ Window {
             file = JSON.stringify(file);
 
             file = file.substring(file.lastIndexOf('/')+1, file.length-1)
-            file_path.text = file;
-            console.log(file.length);
+            filepath.text = file;
+            chosen_file_path = JSON.stringify(fileChooser.fileUrl)
         }
         onRejected: app.chosen_file_path = ""
    }
 
+   SCHEDULE{
+       id : schedule
+       table: app.audio_file_list
+       onTriggered: {
+            scheduleTrigger(index)
+       }
+   }
+
+
+    function scheduleTrigger(index){
+        mainview.currentIndex = index;
+        let filename = audio_file_list[index]['file_path'];
+        if(player.playbackState === Audio.PlayingState){
+            player.stop();
+        }
+        player.source = filename.toString();
+        player.play();
+    }
+
     Component.onCompleted: {
-//        let data = [
-//                    {
-//                        name : "One.mp3",
-//                        date : "Monday",
-//                        time : "9:00 AM"
-//                    },
-//                    {
-//                        name : "Two.mp3",
-//                        date : "Tuesday",
-//                        time : "9:00 AM"
-//                    },
-//                    {
-//                        name : "Three.mp3",
-//                        date : "Monday",
-//                        time : "9:00 AM"
-//                    },
-//                    {
-//                        name : "Four.mp3",
-//                        date : "Tuesday",
-//                        time : "9:00 AM"
-//                    },
-//                    {
-//                        name : "Five.mp3",
-//                        date : "Monday",
-//                        time : "9:00 AM"
-//                    },
-//                    {
-//                        name : "Six.mp3",
-//                        date : "Tuesday",
-//                        time : "9:00 AM"
-//                    },
-//                    {
-//                        name : "Seven.mp3",
-//                        date : "Monday",
-//                        time : "9:00 AM"
-//                    },
-//                    {
-//                        name : "Eight.mp3",
-//                        date : "Tuesday",
-//                        time : "9:00 AM"
-//                    },
-//                    {
-//                        name : "Nine.mp3",
-//                        date : "Monday",
-//                        time : "9:00 AM"
-//                    },
-//                    {
-//                        name : "Teen.mp3",
-//                        date : "Tuesday",
-//                        time : "9:00 AM"
-//                    },
-//                    {
-//                        name : "One.mp3",
-//                        date : "Monday",
-//                        time : "9:00 AM"
-//                    },
-//                    {
-//                        name : "Eleven.mp3",
-//                        date : "Tuesday",
-//                        time : "9:00 AM"
-//                    },
-//                    {
-//                        name : "One.mp3",
-//                        date : "Monday",
-//                        time : "9:00 AM"
-//                    },
-//                    {
-//                        name : "Twelve.mp3",
-//                        date : "Tuesday",
-//                        time : "9:00 AM"
-//                    },
-//                    {
-//                        name : "Thirteen.mp3",
-//                        date : "Monday",
-//                        time : "9:00 AM"
-//                    },
-//                    {
-//                        name : "Fourteen.mp3",
-//                        date : "Tuesday",
-//                        time : "9:00 AM"
-//                    },
-//                    {
-//                        name : "Fifteen.mp3",
-//                        date : "Monday",
-//                        time : "9:00 AM"
-//                    },
-//                    {
-//                        name : "Sixteen.mp3",
-//                        date : "Tuesday",
-//                        time : "9:00 AM"
-//                    },
-//                ]
-//        data = JSON.stringify(data);
-//        appSetting.audio_list = data;
+        schedule.start();
     }
 }

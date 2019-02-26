@@ -4,6 +4,7 @@
         <file>fontawesome.ttf</file>
         <file>CalendarDialog.qml</file>
         <file>TimePicker.qml</file>
-        <file>data.json</file>
+        <file>Player.js</file>
+        <file>SCHEDULE.qml</file>
     </qresource>
 </RCC>

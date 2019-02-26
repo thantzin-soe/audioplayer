@@ -30,4 +30,9 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 DISTFILES += \
     CalendarDialog.qml \
-    TimePicker.qml
+    TimePicker.qml \
+    Player.js \
+    Player.js \
+    02. Take Me To The Top (Deluxe Edition) [One Ok Rock]..mp3 \
+    cryout .mp3 \
+    SCHEDULE.qml
