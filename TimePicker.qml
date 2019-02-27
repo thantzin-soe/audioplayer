@@ -2,11 +2,12 @@ import QtQuick 2.0
 import QtQuick.Controls 2.5
 
 Item {
+    id : root
     height: 60
     width: 400
     property int start_hour: 0
     property int start_minute: 0
-    property string start_am_pm: "AM"
+    property string start_am_pm: "PM"
     signal start_hourchanged()
     signal start_minutechanged()
     signal start_am_pm_changed()
@@ -66,9 +67,16 @@ Item {
             ComboBox {
                 id : ampm
                 model: [ "AM", "PM" ]
+                currentIndex: 1
                 onActivated: {
-                    start_am_pm = ampm.currentText
-                    start_am_pm_changed()
+                    root.start_am_pm = ampm.currentText
+                    console.log("emitted onactivated",root.start_am_pm);
+                    root.start_am_pm_changed()
+                }
+                onCurrentIndexChanged: {
+                    root.start_am_pm = ampm.currentText
+                    console.log("emitted oncurrentIndex ",root.start_am_pm);
+                    root.start_am_pm_changed()
                 }
             }
         }
@@ -77,6 +85,16 @@ Item {
     function resetPickers(){
         hour.value = 1;
         minute.value = 0;
-        ampm.currentIndex = 0;
+        ampm.currentIndex = 1;
+    }
+
+    function setPickers(start_h,start_m,am_pm){
+        hour.value = start_h;
+        minute.value = start_m;
+        if(am_pm.toString() === "AM"){
+            ampm.currentIndex = 0;
+        }else{
+            ampm.currentIndex = 1;
+        }
     }
 }

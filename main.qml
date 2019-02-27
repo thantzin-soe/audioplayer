@@ -22,25 +22,26 @@ Window {
     property var dates : [0,0,0,0,0,0,0]
     property int start_h : 0
     property string start_m: "0"
-    property string am_pm : "AM"
-
+    property string am_pm : "PM"
+    property int edit_id: 0
     FontLoader { id: myFont; source: "qrc:///fontawesome.ttf" }
 
     Audio {
            id: player
            autoPlay: true
            source : ""
+
        }
 
     JsonFileIO {
         id : jsonFileIo
-        filename : "F:/data.json"
+        filename : "D:/data.json"
         Component.onCompleted: {
             audio_file_list = jsonFileIo.load();
             for(var idx in audio_file_list){
                 var obj = audio_file_list[idx];
                 var filename = obj['file_path'];
-                filename = filename.substring(filename.lastIndexOf('/') + 1,filename.length);
+                //filename = filename.substring(filename.lastIndexOf('/') + 1,filename.length);
                 var date = obj['date'];
                 var time = obj['time'];
                 myModel.append({'file_path' : filename , 'date' : JSON.stringify(date) , 'time' : time});
@@ -54,7 +55,7 @@ Window {
             for(var idx in audio_file_list){
                 var obj = audio_file_list[idx];
                 var filename = obj['file_path'];
-                filename = filename.substring(filename.lastIndexOf('/') + 1,filename.length);
+                //filename = filename.substring(filename.lastIndexOf('/') + 1,filename.length);
                 var date = obj['date'];
                 var time = obj['time'];
                 myModel.append({'file_path' : filename , 'date' : JSON.stringify(date) , 'time' : time});
@@ -139,6 +140,7 @@ Window {
                         height: 45
                         anchors.margins: 5
                         color: isCurrentItem ? "black" : "grey"
+                        //color : "grey"
 
                         Row{
                             anchors.fill: content
@@ -151,12 +153,15 @@ Window {
                                 anchors.verticalCenter: parent.verticalCenter
                                 font.family: "Zawgyi-One"
                                 width : (mainview.width - 100) / 3
-                                text: file_path;
+                                text: file_path.substring(file_path.lastIndexOf('/') + 1,file_path.length)
+
+
                                 clip: true
                                 wrapMode: Text.WordWrap
                                 font.weight: Font.DemiBold
                                 font.bold: content.isCurrentItem
                                 color: content.isCurrentItem ? "#33D095" : "white"
+                                //color : "white"
                             }
                             Row{
                                 id : day_row
@@ -190,6 +195,7 @@ Window {
                                 text: time
                                 font.bold: content.isCurrentItem
                                 color: content.isCurrentItem ? "#33D095" : "white"
+                                //color: "white"
 
                             }
 
@@ -220,31 +226,39 @@ Window {
                                 onClicked: {
 
                                     chosen_file_path = file_path;
-                                    filepath.text = chosen_file_path;
-                                    console.log(chosen_file_path, " ", date);
+                                    filepath.text = file_path.substring(file_path.lastIndexOf('/') + 1,file_path.length);
+                                    let timestamp = time;
+                                    let hm_ampm = timestamp.split(" ");
+                                    let hour_minute = hm_ampm[0];
+                                    am_pm = hm_ampm[1];
+                                    start_h = hour_minute.split(":")[0];
+                                    start_m = parseInt(hour_minute.split(":")[1]);
+                                    edit_id = index;
+
+                                    time_picker.setPickers(start_h,start_m,am_pm);
+
                                     let date_list = JSON.parse(date);
-                                    for(var index in date_list){
-                                        if(index === "0" && date_list[index] === 1){
+                                    for(var idx in date_list){
+                                        if(idx === "0" && date_list[idx] === 1){
                                             sunday.checked =  true;
-                                        }else if(index === "1" && date_list[index] === 1){
+                                        }else if(idx === "1" && date_list[idx] === 1){
                                             monday.checked = true;
-                                        }else if(index === "2" && date_list[index] === 1){
+                                        }else if(idx === "2" && date_list[idx] === 1){
                                             tuesday.checked = true;
-                                        }else if(index === "3" && date_list[index] === 1){
+                                        }else if(idx === "3" && date_list[idx] === 1){
                                             wednesday.checked = true;
-                                        }else if(index === "4" && date_list[index] === 1){
+                                        }else if(idx === "4" && date_list[idx] === 1){
                                             thursday.checked = true;
-                                        }else if(index === "5" && date_list[index] === 1){
+                                        }else if(idx === "5" && date_list[idx] === 1){
                                             friday.checked = true;
-                                        }else if(index === "6" && date_list[index] === 1){
+                                        }else if(idx === "6" && date_list[idx] === 1){
                                             saturday.checked = true;
                                         }
                                     }
                                     if(sunday.checked && monday.checked && tuesday.checked && wednesday.checked && thursday.checked && friday.checked &&                                  saturday.checked){
                                         daily.checked = true;
                                     }
-
-                                    console.log(date);
+                                    addDialog.title = "Edit MP3";
                                     addDialog.editMode = true;
                                     addDialog.open();
                                 }
@@ -274,10 +288,10 @@ Window {
 
                                 }
                                 onClicked: {
+                                     let currentIndex = mainview.currentIndex
                                      app.audio_file_list.splice(index,1);
                                      jsonFileIo.save(app.audio_file_list);
-                                     player.stop()
-                                     player.source = "";
+                                     mainview.currentIndex = currentIndex;
                                 }
                             }
                         }
@@ -521,7 +535,8 @@ Window {
                             start_m = time_picker.start_minute
                         }
                         onStart_am_pmChanged: {
-                            am_pm = time_picker.start_am_pm
+                            app.am_pm = time_picker.start_am_pm
+                            console.log("handler ",app.am_pm);
                         }
 
                     }
@@ -536,12 +551,6 @@ Window {
                         anchors.bottomMargin: 20
 
                         text: "Save"
-                        enabled: {
-                            if(chosen_file_path.length > 0){
-                                 return true;
-                            }
-                            return false;
-                        }
 
                         background: Rectangle{
                             color: save.down ? "#009490" : "teal"
@@ -559,21 +568,29 @@ Window {
                             elide: Text.ElideRight
                         }
                         onClicked: {
+                            let currentIndex = mainview.currentIndex;
 
                             if(addDialog.editMode){
-                                chosen_file_path = JSON.stringify(fileChooser.fileUrl)
-                                chosen_file_path = chosen_file_path.replace(/\\|\"/g,"");
+
                                 if(parseInt(start_m) < 10){
                                     start_m =  "0" + start_m.toString();
                                 }
                                 start_h = start_h < 1 ? 1 : start_h;
-                                let edit_time = start_h + ":" + start_m + " " + am_pm
-                                console.log("Edit Saving ");
+                                let edit_time = start_h + ":" + start_m + " " + app.am_pm
+                                console.log("Edit Saving " , edit_id);
                                 console.log("Edit File path " + chosen_file_path);
                                 console.log("Edit Time " + edit_time);
                                 for(var ii in dates){
                                     console.log(dates[ii]);
                                 }
+
+
+                                audio_file_list[edit_id]['file_path'] = chosen_file_path.replace(/\\|\"/g,"");
+                                audio_file_list[edit_id]['date'] = dates;
+                                audio_file_list[edit_id]['time'] = edit_time;
+
+                                jsonFileIo.save(audio_file_list);
+
 
                             }else{
 
@@ -583,7 +600,7 @@ Window {
                                 }
 
                                 start_h = start_h < 1 ? 1 : start_h;
-                                let time = start_h + ":" + start_m + " " + am_pm
+                                let time = start_h + ":" + start_m + " " + app.am_pm
                                 console.log("Saving ");
                                 console.log("File path " + chosen_file_path);
                                 console.log("Time " + time);
@@ -592,7 +609,7 @@ Window {
                                 }
 
                                 var newObj = {
-                                    file_path : app.chosen_file_path,
+                                    file_path : chosen_file_path,
                                     date : app.dates,
                                     time : time
                                 };
@@ -601,7 +618,7 @@ Window {
                                 jsonFileIo.save(app.audio_file_list);
                             }
 
-
+                            mainview.currentIndex = currentIndex;
 
                             chosen_file_path = "";
                             for(var j in dates){
@@ -609,10 +626,10 @@ Window {
                             }
                             start_h = 0;
                             start_m = "0";
-                            am_pm = "AM";
+                            am_pm = "PM";
                             fileChooser.clearSelection();
                             chosen_file_path = "";
-                            file_path.text = "";
+                            filepath.text = "";
                             monday.checked = false;
                             tuesday.checked = false
                             wednesday.checked = false;
@@ -632,6 +649,7 @@ Window {
             if(addDialog.visible){
 
             }else{
+                filepath.text = "";
                 monday.checked = false;
                 tuesday.checked = false
                 wednesday.checked = false;
@@ -666,7 +684,7 @@ Window {
        id : schedule
        table: app.audio_file_list
        onTriggered: {
-            scheduleTrigger(index)
+           scheduleTrigger(index)
        }
    }
 
@@ -679,6 +697,7 @@ Window {
         }
         player.source = filename.toString();
         player.play();
+
     }
 
     Component.onCompleted: {

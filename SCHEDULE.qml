@@ -17,8 +17,7 @@ Item {
             for( var idx in root.table){
                 if(root.table[idx]["date"][Today]){ //day
                     prv.todayTable.push({
-                                            "INDEX" : idx,  //index
-                                            "TIME" :  timeToInt(root.table[idx]["time"])  //time
+                                                "TIME" :  timeToInt(root.table[idx]["time"])  //time
                                             //,"FILE" : root.table[idx]["F"],  //Filename
                                         }) ;
                 }
@@ -31,7 +30,7 @@ Item {
             var AMPM=time.split(" ")[1];
             var Hour=time.split(" ")[0].split(":")[0];
             var Min=time.split(" ")[0].split(":")[1];
-            Hour=  AMPM==="PM" ? Number(Hour)+12 : Hour ;
+            Hour=  AMPM==="PM" && Number(Hour) < 12 ? Number(Hour)+12 : Hour ;
             var timeInt=(Hour*60)+Number(Min);
              console.log("timeToInt ",timeInt);
             return timeInt ;
@@ -53,6 +52,7 @@ Item {
             var dateTime=new Date();
             var hour=dateTime.getHours()
             var minute=dateTime.getMinutes();
+            //hour = Number(hour) < 12 ? Number(hour)+12 : hour ;
 
             if(hour!=prevHour){prevHour=hour;
                 // Hour Changed
@@ -71,13 +71,15 @@ Item {
                 if( prevMinute!=minute){ prevMinute=minute;
                     var timeInt=(hour*60)+minute;
                     for( var idx in  prv.todayTable){
+
                         if(prv.todayTable[idx]["TIME"]===timeInt){
-                            root.triggered(prv.todayTable[idx]["INDEX"]);
+                            root.triggered(idx);
+                            //root.triggered(prv.todayTable[idx]["INDEX"]);
                             console.log("Trigger")
                             break;
                         }
                     }
-                    console.log("Minute Changed", timeInt)
+                    console.log("Minute Changed", timeInt,hour)
                 }
 
             }
