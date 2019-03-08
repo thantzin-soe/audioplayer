@@ -1,4 +1,4 @@
-QT += quick
+QT += quick gui
 CONFIG += c++11
 
 # The following define makes your compiler emit warnings if you use
@@ -35,4 +35,6 @@ DISTFILES += \
     Player.js \
     02. Take Me To The Top (Deluxe Edition) [One Ok Rock]..mp3 \
     cryout .mp3 \
-    SCHEDULE.qml
+    SCHEDULE.qml \
+    3.png \
+    mi.png

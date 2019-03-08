@@ -8,6 +8,7 @@ import MicrostackQMLExtra  1.0
 import QtMultimedia 5.8
 
 Window {
+
     id : app
    // flags: Qt.WindowFullscreenButtonHint | Qt.FramelessWindowHint
     visible: true
