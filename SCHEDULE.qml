@@ -3,7 +3,7 @@ import QtQuick 2.5
 Item {
     id:root
     property var table:([])
-    property bool secondResolution: false
+    property bool secondResolution: true
     signal triggered(var index);
 
     QtObject{
@@ -29,9 +29,13 @@ Item {
         function timeToInt(time){
             var AMPM=time.split(" ")[1];
             var Hour=time.split(" ")[0].split(":")[0];
+
             var Min=time.split(" ")[0].split(":")[1];
+
+            var Sec=time.split(" ")[0].split(":")[2];
+
             Hour=  AMPM==="PM" && Number(Hour) < 12 ? Number(Hour)+12 : Hour ;
-            var timeInt=(Hour*60)+Number(Min);
+            var timeInt=(Hour*3600)+(Number(Min) * 60 )+Number(Sec);
              console.log("timeToInt ",timeInt);
             return timeInt ;
         }
@@ -48,10 +52,14 @@ Item {
         property int prevHour: -1
         property int prevMinute: -1
         property int prevDay: -1
+        property int prevSecond : -1
+        property int stepCount : 0
         onTriggered: {
             var dateTime=new Date();
             var hour=dateTime.getHours()
             var minute=dateTime.getMinutes();
+            var second = dateTime.getSeconds();
+
             //hour = Number(hour) < 12 ? Number(hour)+12 : hour ;
 
             if(hour!=prevHour){prevHour=hour;
@@ -66,21 +74,36 @@ Item {
 
             if(secondResolution){
                 //Second Changed
-            }else{
-                // Minute Changed
-                if( prevMinute!=minute){ prevMinute=minute;
-                    var timeInt=(hour*60)+minute;
+                if( prevSecond != second){
+                    stepCount++;
+                    prevSecond = second;
+                    var timeInt = (hour * 3600) + minute * 60 + second;
                     for( var idx in  prv.todayTable){
 
                         if(prv.todayTable[idx]["TIME"]===timeInt){
-                            root.triggered(idx);
-                            //root.triggered(prv.todayTable[idx]["INDEX"]);
-                            console.log("Trigger")
-                            break;
-                        }
-                    }
-                    console.log("Minute Changed", timeInt,hour)
+                           root.triggered(idx);
+                           //root.triggered(prv.todayTable[idx]["INDEX"]);
+                           console.log("Trigger")
+                           break;
+                         }
+                     }
+                     console.log("Second Changed", timeInt,hour)
                 }
+            }else{
+                // Minute Changed
+//                if( prevMinute!=minute){ prevMinute=minute;
+//                    var timeInt=(hour*60)+minute;
+//                    for( var idx in  prv.todayTable){
+
+//                        if(prv.todayTable[idx]["TIME"]===timeInt){
+//                            root.triggered(idx);
+//                            //root.triggered(prv.todayTable[idx]["INDEX"]);
+//                            console.log("Trigger")
+//                            break;
+//                        }
+//                    }
+//                    console.log("Minute Changed", timeInt,hour)
+//                }
 
             }
 

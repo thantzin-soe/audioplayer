@@ -7,16 +7,20 @@ Item {
     width: 400
     property int start_hour: 0
     property int start_minute: 0
+    property int start_second : 0
     property string start_am_pm: "PM"
     signal start_hourchanged()
     signal start_minutechanged()
     signal start_am_pm_changed()
+    signal start_secondchanged()
 
     Column{
         anchors.fill: parent
         spacing: 10
         Row{
             spacing: 5
+            anchors.horizontalCenter: parent.horizontalCenter
+
             Text {
                 font.pixelSize: 14
                 horizontalAlignment: Text.AlignHCenter
@@ -29,6 +33,13 @@ Item {
                 horizontalAlignment: Text.AlignHCenter
                 width: minute.width
                 text: qsTr("Minute")
+            }
+
+            Text {
+                font.pixelSize: 14
+                horizontalAlignment: Text.AlignHCenter
+                width: second.width
+                text: qsTr("Second")
             }
 
             Text {
@@ -64,6 +75,17 @@ Item {
                     start_minutechanged()
                 }
             }
+            SpinBox {
+                id: second
+                value : 0
+                from : 0
+                to : 59
+                stepSize: 5
+                onValueChanged: {
+                    start_second = second.value
+                    start_secondchanged()
+                }
+            }
             ComboBox {
                 id : ampm
                 model: [ "AM", "PM" ]
@@ -85,6 +107,7 @@ Item {
     function resetPickers(){
         hour.value = 1;
         minute.value = 0;
+        second.value = 0;
         ampm.currentIndex = 1;
     }
 

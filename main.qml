@@ -23,6 +23,7 @@ Window {
     property var dates : [0,0,0,0,0,0,0]
     property int start_h : 0
     property string start_m: "0"
+    property string start_s: "0"
     property string am_pm : "PM"
     property int edit_id: 0
     FontLoader { id: myFont; source: "qrc:///fontawesome.ttf" }
@@ -328,7 +329,7 @@ Window {
         contentItem: Rectangle {
             id : mainContent
             color: "lightgrey"
-            implicitWidth: 600
+            implicitWidth: 650
             implicitHeight: 350
 
                 Rectangle{
@@ -537,7 +538,9 @@ Window {
                         }
                         onStart_am_pmChanged: {
                             app.am_pm = time_picker.start_am_pm
-                            console.log("handler ",app.am_pm);
+                        }
+                        onStart_secondChanged: {
+                            app.start_s = time_picker.start_second
                         }
 
                     }
@@ -576,8 +579,12 @@ Window {
                                 if(parseInt(start_m) < 10){
                                     start_m =  "0" + start_m.toString();
                                 }
+                                if(parseInt(start_s) < 10){
+                                    start_s = "0" + start_s.toString();
+                                }
+
                                 start_h = start_h < 1 ? 1 : start_h;
-                                let edit_time = start_h + ":" + start_m + " " + app.am_pm
+                                let edit_time = start_h + ":" + start_m + ":" + start_s + " " + app.am_pm
                                 console.log("Edit Saving " , edit_id);
                                 console.log("Edit File path " + chosen_file_path);
                                 console.log("Edit Time " + edit_time);
@@ -599,9 +606,12 @@ Window {
                                 if(parseInt(start_m) < 10){
                                     start_m =  "0" + start_m.toString();
                                 }
+                                if(parseInt(start_s) < 10){
+                                    start_s = "0" + start_s.toString();
+                                }
 
                                 start_h = start_h < 1 ? 1 : start_h;
-                                let time = start_h + ":" + start_m + " " + app.am_pm
+                                let time = start_h + ":" + start_m + ":" + start_s + " " + app.am_pm
                                 console.log("Saving ");
                                 console.log("File path " + chosen_file_path);
                                 console.log("Time " + time);
@@ -627,6 +637,7 @@ Window {
                             }
                             start_h = 0;
                             start_m = "0";
+                            start_s = "0";
                             am_pm = "PM";
                             fileChooser.clearSelection();
                             chosen_file_path = "";
